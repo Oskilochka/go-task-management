@@ -1,0 +1,43 @@
+# Ignore Go binary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Ignore build artifacts
+/bin/
+/obj/
+
+# Ignore Go modules and dependencies
+/vendor/
+
+# Ignore Go test output
+*.test
+
+# Ignore Go workspace files
+go.work
+go.work.sum
+
+# Ignore IDE/editor directories
+.vscode/
+.idea/
+*.suo
+*.swp
+*.swn
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore configuration files for build tools
+*.out
+
+# Ignore coverage reports
+coverage.out
