@@ -3,23 +3,24 @@ package routes
 import (
 	"github.com/gorilla/mux"
 	"josk/task-management-system/handlers"
-	"log"
-	"net/http"
+	"josk/task-management-system/middlewares"
 )
 
-func InitRoutes() *mux.Router {
+func SetupRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/tasks", handlers.CreateTask).Methods("POST")
-	router.HandleFunc("/tasks", handlers.GetTasks).Methods("GET")
-	router.HandleFunc("/tasks/{id}", handlers.GetTaskById).Methods("GET")
-	router.HandleFunc("/tasks/{id}", handlers.UpdateTask).Methods("PUT")
-	router.HandleFunc("/tasks/{id}", handlers.DeleteTaskById).Methods("DELETE")
+	// auth
+	router.HandleFunc("/register", handlers.Register).Methods("POST")
+	router.HandleFunc("/login", handlers.Login).Methods("POST")
 
-	err := http.ListenAndServe(":8080", router)
+	// tasks
+	taskRoutes := router.PathPrefix("/tasks").Subrouter()
+	taskRoutes.Use(middlewares.JWTMiddleware)
+	taskRoutes.HandleFunc("", handlers.CreateTask).Methods("POST")
+	taskRoutes.HandleFunc("", handlers.GetTasks).Methods("GET")
+	taskRoutes.HandleFunc("/{id}", handlers.GetTaskById).Methods("GET")
+	taskRoutes.HandleFunc("/{id}", handlers.UpdateTask).Methods("PUT")
+	taskRoutes.HandleFunc("/{id}", handlers.DeleteTaskById).Methods("DELETE")
 
-	if err != nil {
-		log.Fatalln("There's an error with the server,", err)
-	}
 	return router
 }

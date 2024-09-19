@@ -157,5 +157,25 @@ Replace {id} with the actual task ID.
 curl -X DELETE http://localhost:8080/tasks/{id}
    ```
 
+6.**Register:**
+
+```bash
+curl -X POST http://localhost:8080/register \
+  -H "Content-Type: application/json" \
+  -d '{
+        "username": "username",
+        "password": "your password",
+        "email": "test@gmail.com"
+      }'  
+   ```
  
- 
+7. **Login:**
+```bash
+curl -X POST http://localhost:8080/login \
+    -H "Content-Type: application/json" \
+    -d '{
+        "username": "username",
+        "password": "your password",
+        "email": "test@gmail.com"
+        }'
+   ```
