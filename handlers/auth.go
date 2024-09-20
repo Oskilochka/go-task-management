@@ -38,7 +38,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	var credentials models.User
+	var credentials models.LoginRequest
 
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 

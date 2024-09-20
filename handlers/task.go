@@ -36,7 +36,9 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.SendJSONResponse(w, task, http.StatusCreated)
+	taskResponse := utils.MapTaskToTaskResponse(task)
+
+	utils.SendJSONResponse(w, taskResponse, http.StatusCreated)
 }
 
 func UpdateTask(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +69,10 @@ func UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	database.DB.Model(&task).Updates(updatedTask)
-	utils.SendJSONResponse(w, task, http.StatusOK)
+
+	taskResponse := utils.MapTaskToTaskResponse(updatedTask)
+
+	utils.SendJSONResponse(w, taskResponse, http.StatusOK)
 }
 
 func GetTasks(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +92,9 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.SendJSONResponse(w, tasks, http.StatusOK)
+	taskResponse := utils.MapTasksToTaskResponses(tasks)
+
+	utils.SendJSONResponse(w, taskResponse, http.StatusOK)
 }
 
 func GetTaskById(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +115,9 @@ func GetTaskById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.SendJSONResponse(w, task, http.StatusOK)
+	taskResponse := utils.MapTaskToTaskResponse(task)
+
+	utils.SendJSONResponse(w, taskResponse, http.StatusOK)
 }
 
 func DeleteTaskById(w http.ResponseWriter, r *http.Request) {
