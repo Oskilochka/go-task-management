@@ -114,6 +114,18 @@ service.
     ```
 The server will start on http://localhost:8080.
 
+### Docker Support
+This project includes a Dockerfile and a docker-compose.yml file,
+allowing you to easily build and run the application in a containerized environment.
+
+#### Running the Application with Docker
+1. Build the Docker image and start the container:
+     ```bash
+       docker-compose up --build
+    ```
+2. Access the API: The application will be accessible at http://localhost:8080.
+
+***Notes***: Ensure that Docker is installed and running on your machine before executing the commands.
 
 ### API Endpoints
 
