@@ -18,7 +18,7 @@ type Task struct {
 type User struct {
 	gorm.Model
 	Username string `json:"username" gorm:"unique;not null"`
-	Password string `json:"-"`
+	Password string `json:"password"`
 	Email    string `json:"email" gorm:"unique;not null"`
 }
 
@@ -43,5 +43,5 @@ type TaskResponse struct {
 
 type LoginRequest struct {
 	Username string `json:"username"`
-	Password string `json:"-"`
+	Password string `json:"password"`
 }
