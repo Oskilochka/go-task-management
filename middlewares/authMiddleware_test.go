@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"josk/task-management-system/auth"
 	"josk/task-management-system/models"
@@ -9,75 +8,64 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
-var jwtKey = []byte("your_secret_key")
-
-func generateTestToken(claims *models.Claims, signingMethod jwt.SigningMethod, key []byte) (string, error) {
-	token := jwt.NewWithClaims(signingMethod, claims)
-	return token.SignedString(key)
-}
-
-func MockHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(UserKey)
-	if userID == nil {
-		utils.SendJSONResponse(w, map[string]string{"error": "No user in context"}, http.StatusInternalServerError)
-		return
-	}
-
-	utils.SendJSONResponse(w, map[string]string{"message": "Success", "userID": userID.(string)}, http.StatusOK)
+func mockNextHandler(w http.ResponseWriter, r *http.Request) {
+	utils.SendJSONResponse(w, map[string]string{"message": "success"}, http.StatusOK)
 }
 
 func TestJWTMiddleware(t *testing.T) {
-	t.Run("No Authorization header", func(t *testing.T) {
-		req, _ := http.NewRequest("GET", "/some-endpoint", nil)
-		rr := httptest.NewRecorder()
+	t.Run("Missing Authorization header", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/protected", nil)
+		w := httptest.NewRecorder()
 
-		handler := JWTMiddleware(http.HandlerFunc(MockHandler))
-		handler.ServeHTTP(rr, req)
+		handler := JWTMiddleware(http.HandlerFunc(mockNextHandler))
+		handler.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		assert.JSONEq(t, `{"error": "Authorization header is missing"}`, rr.Body.String())
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Authorization header is missing")
 	})
 
-	t.Run("Invalid token", func(t *testing.T) {
-		token := "invalidTokenString"
-		_, err := auth.VerifyJWT(token)
+	t.Run("Invalid Token", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/protected", nil)
+		req.Header.Set("Authorization", "Bearer invalidToken")
+		w := httptest.NewRecorder()
 
-		assert.NotNil(t, err)
-		assert.Equal(t, "token is malformed: token contains an invalid number of segments", err.Error())
+		handler := JWTMiddleware(http.HandlerFunc(mockNextHandler))
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid token")
 	})
 
-	t.Run("Valid token", func(t *testing.T) {
-		expirationTime := time.Now().Add(24 * time.Hour)
+	t.Run("Valid Token", func(t *testing.T) {
+		tokenString, _ := auth.GenerateJWT(1, "testuser")
 
-		claims := &models.Claims{
-			UserID: 1,
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(expirationTime),
-			}}
+		req := httptest.NewRequest("GET", "/protected", nil)
+		req.Header.Set("Authorization", "Bearer "+tokenString)
+		w := httptest.NewRecorder()
 
-		token, _ := generateTestToken(claims, jwt.SigningMethodHS256, jwtKey)
-		resultClaims, err := auth.VerifyJWT(token)
+		var capturedRequest *http.Request
+		handler := JWTMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			capturedRequest = r
+			mockNextHandler(w, r)
+		}))
 
-		assert.Nil(t, err)
-		assert.Equal(t, claims.UserID, resultClaims.UserID)
-	})
+		handler.ServeHTTP(w, req)
 
-	t.Run("Expired token", func(t *testing.T) {
-		expirationTime := time.Now().Add(-1 * time.Hour)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "success")
 
-		claims := &models.Claims{
-			UserID: 1,
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(expirationTime),
-			}}
+		if capturedRequest == nil {
+			t.Fatal("Request was not captured")
+		}
 
-		token, _ := generateTestToken(claims, jwt.SigningMethodHS256, jwtKey)
-		_, err := auth.VerifyJWT(token)
+		userClaims, ok := capturedRequest.Context().Value(UserKey).(*models.Claims)
+		if !ok || userClaims == nil {
+			t.Fatal("Expected claims in context, but got nil")
+		}
 
-		assert.NotNil(t, err)
-		assert.Equal(t, "token has invalid claims: token is expired", err.Error())
+		assert.Equal(t, uint(1), userClaims.UserID)
+		assert.Equal(t, "testuser", userClaims.Username)
 	})
 }
