@@ -40,6 +40,7 @@ func TestJWTMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
 		assert.JSONEq(t, `{"error": "Authorization header is missing"}`, rr.Body.String())
 	})
+
 	t.Run("Invalid token", func(t *testing.T) {
 		token := "invalidTokenString"
 		_, err := auth.VerifyJWT(token)
@@ -62,5 +63,21 @@ func TestJWTMiddleware(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, resultClaims.UserID)
+	})
+
+	t.Run("Expired token", func(t *testing.T) {
+		expirationTime := time.Now().Add(-1 * time.Hour)
+
+		claims := &models.Claims{
+			UserID: 1,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(expirationTime),
+			}}
+
+		token, _ := generateTestToken(claims, jwt.SigningMethodHS256, jwtKey)
+		_, err := auth.VerifyJWT(token)
+
+		assert.NotNil(t, err)
+		assert.Equal(t, "token has invalid claims: token is expired", err.Error())
 	})
 }
